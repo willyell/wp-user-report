@@ -15,10 +15,15 @@ use YahnisElsts\PluginUpdateChecker\v5p4\PucFactory;
 
 // Set up the update checker
 $updateChecker = PucFactory::buildUpdateChecker(
-    'https://github.com/willyell/wp-user-report', // Corrected GitHub repository URL
+    'https://github.com/willyell/wp-user-report', // GitHub owner/repo
     __FILE__,                                       // Full path to this main plugin file
     'user-registrations-summary'                    // Plugin slug
 );
+
+// If you hit GitHub API rate limits (403 errors), supply a personal access token:
+if ( defined( 'GITHUB_UPDATER_TOKEN' ) && GITHUB_UPDATER_TOKEN ) {
+    $updateChecker->setAuthentication( GITHUB_UPDATER_TOKEN );
+}
 // v5p4 automatically checks the default branch; no setBranch() needed
 
 class URS_Summary {
