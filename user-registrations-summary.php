@@ -12,13 +12,17 @@ if (!defined('ABSPATH')) exit;
  * Auto-update via GitHub Releases
  * Uses Yahnis-elsts/plugin-update-checker library.
  */
-require __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+// 1) Load the PUC library
+require_once __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
+
+// 2) Instantiate the update checker
 $updateChecker = Puc_v4_Factory::buildUpdateChecker(
-    'https://api.github.com/repos/your-user/user-registrations-summary', // GitHub repo
-    __FILE__, // full path to the main plugin file
-    'user-registrations-summary' // plugin slug
+    'https://api.github.com/repos/your-user/wp-user-report-main',
+    __FILE__,
+    'wp-user-report-main'
 );
-// Set the branch to check for updates:
 $updateChecker->setBranch('main');
 
 class URS_Summary {
