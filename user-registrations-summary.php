@@ -19,7 +19,7 @@ use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 // Set up the update checker
 $myUpdateChecker = PucFactory::buildUpdateChecker(
-    'https://github.com/willyell/user-registrations-summary', // Corrected GitHub repository URL
+    'https://github.com/willyell/wp-user-report', // Corrected GitHub repository URL
     __FILE__, // Full path to the main plugin file
     'user-registrations-summary' // A unique slug for the plugin
 );
