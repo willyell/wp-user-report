@@ -15,9 +15,9 @@ use YahnisElsts\PluginUpdateChecker\v5p4\PucFactory;
 
 // Set up the update checker
 $updateChecker = PucFactory::buildUpdateChecker(
-    'willyell/wp-user-report', // GitHub owner/repo
-    __FILE__,                  // Full path to this main plugin file
-    'user-registrations-summary' // Plugin slug
+    'https://github.com/willyell/wp-user-report', // Corrected GitHub repository URL
+    __FILE__,                                       // Full path to this main plugin file
+    'user-registrations-summary'                    // Plugin slug
 );
 // v5p4 automatically checks the default branch; no setBranch() needed
 
