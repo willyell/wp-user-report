@@ -24,7 +24,7 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
     'user-registrations-summary' // A unique slug for the plugin
 );
 
-$updateChecker->setBranch('main');
+//$updateChecker->setBranch('main');
 
 class URS_Summary {
     const CRON_HOOK = 'urs_daily_summary';
