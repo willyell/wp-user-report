@@ -1,30 +1,25 @@
 <?php
 /*
 Plugin Name: User Registrations Summary
-Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender, and auto-update from GitHub releases.
-Version: 1.3.3
+Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender, and GitHub auto-updates.
+Version: 1.4
 Author: William Yell
 */
 
 if (!defined('ABSPATH')) exit;
 
-/**
- * Auto-update via GitHub Releases
- * Uses Yahnis-elsts/plugin-update-checker library.
- */
 // Ensure Plugin Update Checker is included
-require 'plugin-update-checker/plugin-update-checker.php';
+require_once __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
 
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+use YahnisElsts\PluginUpdateChecker\v5p4\PucFactory;
 
 // Set up the update checker
-$myUpdateChecker = PucFactory::buildUpdateChecker(
-    'https://github.com/willyell/wp-user-report', // Corrected GitHub repository URL
-    __FILE__, // Full path to the main plugin file
-    'user-registrations-summary' // A unique slug for the plugin
+$updateChecker = PucFactory::buildUpdateChecker(
+    'willyell/wp-user-report', // GitHub owner/repo
+    __FILE__,                  // Full path to this main plugin file
+    'user-registrations-summary' // Plugin slug
 );
-
-//$updateChecker->setBranch('main');
+// v5p4 automatically checks the default branch; no setBranch() needed
 
 class URS_Summary {
     const CRON_HOOK = 'urs_daily_summary';
@@ -73,13 +68,19 @@ class URS_Summary {
     }
 
     public function render_report() {
+        // Get last 7 days data in ascending order for chart
         $results = $this->get_data(7);
         $labels = wp_list_pluck($results, 'reg_date');
         $counts = wp_list_pluck($results, 'count');
+
         echo '<div class="wrap"><h1>User Registrations by Day</h1>';
         echo '<div style="width:600px; height:300px;"><canvas id="urs_chart" width="600" height="300"></canvas></div>';
+
+        // Reverse the results for table: latest day first
+        $rows = array_reverse($results);
+
         echo '<table class="widefat fixed striped"><thead><tr><th>Date</th><th>Registrations</th></tr></thead><tbody>';
-        foreach ($results as $row) {
+        foreach ($rows as $row) {
             printf('<tr><td>%s</td><td>%d</td></tr>', esc_html($row->reg_date), intval($row->count));
         }
         echo '</tbody></table></div>';
@@ -104,7 +105,9 @@ class URS_Summary {
         $atts = shortcode_atts(array('days' => 7), $atts, 'registration_summary');
         $results = $this->get_data(intval($atts['days']));
         $output = '<table><tr><th>Date</th><th>Registrations</th></tr>';
-        foreach ($results as $row) {
+        // Show latest first
+        $rows = array_reverse($results);
+        foreach ($rows as $row) {
             $output .= sprintf('<tr><td>%s</td><td>%d</td></tr>', esc_html($row->reg_date), intval($row->count));
         }
         $output .= '</table>';
