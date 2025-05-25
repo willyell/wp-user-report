@@ -15,11 +15,11 @@ if (!defined('ABSPATH')) exit;
 // 1) Load the PUC library
 require_once __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
 
-// 2) Instantiate the update checker via the v5 factory
-$updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-    'https://api.github.com/repos/your-user/wp-user-report-main', // your repo URL
-    __FILE__,                                                     // full path to this file
-    'wp-user-report-main'                                         // your plugin’s slug/folder name
+// 2) Use the v5p4 factory
+$updateChecker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+    'https://api.github.com/repos/will-yell/wp-user-report-main',
+    __FILE__,
+    'wp-user-report-main'
 );
 $updateChecker->setBranch('main');
 
