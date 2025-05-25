@@ -1,12 +1,25 @@
 <?php
 /*
 Plugin Name: User Registrations Summary
-Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender.
+Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender, and auto-update from GitHub releases.
 Version: 1.3
 Author: William Yell
 */
 
 if (!defined('ABSPATH')) exit;
+
+/**
+ * Auto-update via GitHub Releases
+ * Uses Yahnis-elsts/plugin-update-checker library.
+ */
+require __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
+$updateChecker = Puc_v4_Factory::buildUpdateChecker(
+    'https://api.github.com/repos/your-user/user-registrations-summary', // GitHub repo
+    __FILE__, // full path to the main plugin file
+    'user-registrations-summary' // plugin slug
+);
+// Set the branch to check for updates:
+$updateChecker->setBranch('main');
 
 class URS_Summary {
     const CRON_HOOK = 'urs_daily_summary';
