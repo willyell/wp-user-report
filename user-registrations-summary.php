@@ -12,16 +12,14 @@ if (!defined('ABSPATH')) exit;
  * Auto-update via GitHub Releases
  * Uses Yahnis-elsts/plugin-update-checker library.
  */
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 // 1) Load the PUC library
 require_once __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
 
-// 2) Instantiate the update checker
-$updateChecker = Puc_v4_Factory::buildUpdateChecker(
-    'https://api.github.com/repos/your-user/wp-user-report-main',
-    __FILE__,
-    'wp-user-report-main'
+// 2) Instantiate the update checker via the v5 factory
+$updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
+    'https://api.github.com/repos/your-user/wp-user-report-main', // your repo URL
+    __FILE__,                                                     // full path to this file
+    'wp-user-report-main'                                         // your plugin’s slug/folder name
 );
 $updateChecker->setBranch('main');
 
