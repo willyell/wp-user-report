@@ -2,7 +2,7 @@
 /*
 Plugin Name: User Registrations Summary
 Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender, and auto-update from GitHub releases.
-Version: 1.3
+Version: 1.3.3
 Author: William Yell
 */
 
