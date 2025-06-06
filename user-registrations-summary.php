@@ -2,7 +2,7 @@
 /*
 Plugin Name: User Registrations Summary
 Description: Provides an admin report and shortcode to summarise new user registrations by day and hour, with charts and daily email summary, using a trusted email sender, and GitHub auto-updates.
-Version: 1.5
+Version: 1.5.1
 Author: William Yell
 */
 
@@ -15,7 +15,7 @@ use YahnisElsts\PluginUpdateChecker\v5p4\PucFactory;
 
 // Set up the update checker
 $updateChecker = PucFactory::buildUpdateChecker(
-    'https://github.com/willyell/wp-user-report', // GitHub owner/repo
+    'https://github.com/willyell/wp-user-report/', // GitHub owner/repo
     __FILE__,                                      // Full path to this main plugin file
     'user-registrations-summary'                   // Plugin slug
 );
