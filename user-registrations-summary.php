@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: User Registrations Summary
-Description: Provides an admin report and shortcode to summarise new user registrations by day, with chart and daily email summary, using a trusted email sender, and GitHub auto-updates.
-Version: 1.4
+Description: Provides an admin report and shortcode to summarise new user registrations by day and hour, with charts and daily email summary, using a trusted email sender, and GitHub auto-updates.
+Version: 1.5
 Author: William Yell
 */
 
@@ -16,14 +16,9 @@ use YahnisElsts\PluginUpdateChecker\v5p4\PucFactory;
 // Set up the update checker
 $updateChecker = PucFactory::buildUpdateChecker(
     'https://github.com/willyell/wp-user-report', // GitHub owner/repo
-    __FILE__,                                       // Full path to this main plugin file
-    'user-registrations-summary'                    // Plugin slug
+    __FILE__,                                      // Full path to this main plugin file
+    'user-registrations-summary'                   // Plugin slug
 );
-
-// If you hit GitHub API rate limits (403 errors), supply a personal access token:
-if ( defined( 'GITHUB_UPDATER_TOKEN' ) && GITHUB_UPDATER_TOKEN ) {
-    $updateChecker->setAuthentication( GITHUB_UPDATER_TOKEN );
-}
 // v5p4 automatically checks the default branch; no setBranch() needed
 
 class URS_Summary {
@@ -52,7 +47,7 @@ class URS_Summary {
         wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
     }
 
-    private function get_data($days = null) {
+    private function get_daily_data($days = null) {
         global $wpdb;
         if ($days) {
             return $wpdb->get_results($wpdb->prepare(
@@ -72,32 +67,79 @@ class URS_Summary {
         );
     }
 
+    private function get_hourly_data($hours = 24) {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT DATE_FORMAT(user_registered, '%%Y-%%m-%%d %%H:00:00') AS hour_block, COUNT(*) AS count
+             FROM {$wpdb->users}
+             WHERE user_registered >= DATE_SUB(NOW(), INTERVAL %d HOUR)
+             GROUP BY hour_block
+             ORDER BY hour_block ASC",
+            $hours
+        ));
+    }
+
     public function render_report() {
-        // Get last 7 days data in ascending order for chart
-        $results = $this->get_data(7);
-        $labels = wp_list_pluck($results, 'reg_date');
-        $counts = wp_list_pluck($results, 'count');
+        // Daily data
+        $daily = $this->get_daily_data(7);
+        $daily_labels = wp_list_pluck($daily, 'reg_date');
+        $daily_counts = wp_list_pluck($daily, 'count');
 
-        echo '<div class="wrap"><h1>User Registrations by Day</h1>';
-        echo '<div style="width:600px; height:300px;"><canvas id="urs_chart" width="600" height="300"></canvas></div>';
+        // Hourly data
+        $hourly = $this->get_hourly_data(24);
+        $hour_labels = wp_list_pluck($hourly, 'hour_block');
+        $hour_counts = wp_list_pluck($hourly, 'count');
 
-        // Reverse the results for table: latest day first
-        $rows = array_reverse($results);
+        echo '<div class="wrap"><h1>User Registrations Summary</h1>';
 
+        // Daily chart
+        echo '<h2>Last 7 Days</h2>';
+        echo '<div style="width:600px; height:300px;"><canvas id="urs_daily_chart" width="600" height="300"></canvas></div>';
+
+        // Hourly chart
+        echo '<h2>Last 24 Hours</h2>';
+        echo '<div style="width:600px; height:300px;"><canvas id="urs_hourly_chart" width="600" height="300"></canvas></div>';
+
+        // Daily table reversed (latest first)
+        $daily_rows = array_reverse($daily);
+        echo '<h3>Daily Registrations</h3>';
         echo '<table class="widefat fixed striped"><thead><tr><th>Date</th><th>Registrations</th></tr></thead><tbody>';
-        foreach ($rows as $row) {
+        foreach ($daily_rows as $row) {
             printf('<tr><td>%s</td><td>%d</td></tr>', esc_html($row->reg_date), intval($row->count));
         }
-        echo '</tbody></table></div>';
+        echo '</tbody></table>';
+
+        // Optional: Hourly table reversed (latest first)
+        $hourly_rows = array_reverse($hourly);
+        echo '<h3>Hourly Registrations</h3>';
+        echo '<table class="widefat fixed striped"><thead><tr><th>Hour</th><th>Registrations</th></tr></thead><tbody>';
+        foreach ($hourly_rows as $row) {
+            printf('<tr><td>%s</td><td>%d</td></tr>', esc_html($row->hour_block), intval($row->count));
+        }
+        echo '</tbody></table>';
+
+        echo '</div>';
         ?>
         <script>
         document.addEventListener('DOMContentLoaded', function(){
-            var ctx = document.getElementById('urs_chart').getContext('2d');
-            new Chart(ctx, {
+            // Daily chart
+            var ctxDaily = document.getElementById('urs_daily_chart').getContext('2d');
+            new Chart(ctxDaily, {
                 type: 'bar',
                 data: {
-                    labels: <?php echo wp_json_encode($labels); ?>,
-                    datasets: [{ label: 'Registrations', data: <?php echo wp_json_encode($counts); ?> }]
+                    labels: <?php echo wp_json_encode($daily_labels); ?>,
+                    datasets: [{ label: 'Registrations', data: <?php echo wp_json_encode($daily_counts); ?> }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            // Hourly chart
+            var ctxHourly = document.getElementById('urs_hourly_chart').getContext('2d');
+            new Chart(ctxHourly, {
+                type: 'bar',
+                data: {
+                    labels: <?php echo wp_json_encode($hour_labels); ?>,
+                    datasets: [{ label: 'Registrations', data: <?php echo wp_json_encode($hour_counts); ?> }]
                 },
                 options: { responsive: true, maintainAspectRatio: true }
             });
@@ -108,9 +150,8 @@ class URS_Summary {
 
     public function shortcode_summary($atts) {
         $atts = shortcode_atts(array('days' => 7), $atts, 'registration_summary');
-        $results = $this->get_data(intval($atts['days']));
+        $results = $this->get_daily_data(intval($atts['days']));
         $output = '<table><tr><th>Date</th><th>Registrations</th></tr>';
-        // Show latest first
         $rows = array_reverse($results);
         foreach ($rows as $row) {
             $output .= sprintf('<tr><td>%s</td><td>%d</td></tr>', esc_html($row->reg_date), intval($row->count));
@@ -126,17 +167,17 @@ class URS_Summary {
     }
 
     public function send_daily_summary() {
-        $results      = $this->get_data(7);
-        $labels       = wp_list_pluck($results, 'reg_date');
-        $counts       = wp_list_pluck($results, 'count');
-        $config       = array(
+        $daily       = $this->get_daily_data(7);
+        $labels      = wp_list_pluck($daily, 'reg_date');
+        $counts      = wp_list_pluck($daily, 'count');
+        $config      = array(
             'type' => 'bar',
             'data' => array('labels' => $labels, 'datasets' => array(array('label' => 'Registrations', 'data' => $counts)))
         );
-        $chart_url    = 'https://quickchart.io/chart?c=' . urlencode(json_encode($config));
-        $yesterday    = date('Y-m-d', strtotime('yesterday'));
+        $chart_url   = 'https://quickchart.io/chart?c=' . urlencode(json_encode($config));
+        $yesterday   = date('Y-m-d', strtotime('yesterday'));
         $yester_count = 0;
-        foreach ($results as $row) {
+        foreach ($daily as $row) {
             if ($row->reg_date === $yesterday) {
                 $yester_count = intval($row->count);
                 break;
@@ -157,8 +198,6 @@ class URS_Summary {
         $headers = array('Content-Type: text/html; charset=UTF-8');
 
         wp_mail(get_option('admin_email'), $subject, $message, $headers);
-
-        // Remove filters to avoid affecting other emails
         remove_all_filters('wp_mail_from');
         remove_all_filters('wp_mail_from_name');
     }
